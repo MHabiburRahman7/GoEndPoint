@@ -56,6 +56,8 @@ func handleRequestsUsingMux(){
     // replace http.HandleFunc with myRouter.HandleFunc
     myRouter.HandleFunc("/", homePage)
     myRouter.HandleFunc("/all", returnAllArticles)
+    //put
+    myRouter.HandleFunc("/article", updateArticleData).Methods("PUT")
     //delete
     myRouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
     myRouter.HandleFunc("/article/{id}", returnSingleArticle)
@@ -86,6 +88,30 @@ func createNewArticleDataAndApped(w http.ResponseWriter, r *http.Request) {
     ArticleDatas = append(ArticleDatas, articleData)
 
     json.NewEncoder(w).Encode(ArticleDatas)
+}
+
+func updateArticleData(w http.ResponseWriter, r *http.Request){
+    // get the body of our POST request
+    // return the string response containing the request body
+    reqBody, _ := ioutil.ReadAll(r.Body)
+    var articleData ArticleData
+    json.Unmarshal(reqBody, &articleData)
+
+    id := articleData.Id
+    // we then need to loop through all our articles
+    for index, article := range ArticleDatas {
+        // if our id path parameter matches one of our
+        // articles
+        if article.Id == id {
+            // updates our Articles array to remove the
+            // article
+            ArticleDatas = append(ArticleDatas[:index], ArticleDatas[index+1:]...)
+
+            //attach the new articleData
+            ArticleDatas = append(ArticleDatas, articleData)
+            fmt.Println("Updated")
+        }
+    }
 }
 
 func deleteArticle(w http.ResponseWriter, r *http.Request){
