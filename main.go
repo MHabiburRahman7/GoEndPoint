@@ -1,3 +1,5 @@
+//https://tutorialedge.net/golang/creating-restful-api-with-golang/
+
 package main
 
 import (
@@ -6,6 +8,7 @@ import (
     "net/http"
     "encoding/json"
     "github.com/gorilla/mux"
+    "io/ioutil"
 )
 
 type ArticleData struct{
@@ -53,11 +56,59 @@ func handleRequestsUsingMux(){
     // replace http.HandleFunc with myRouter.HandleFunc
     myRouter.HandleFunc("/", homePage)
     myRouter.HandleFunc("/all", returnAllArticles)
+    //delete
+    myRouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
     myRouter.HandleFunc("/article/{id}", returnSingleArticle)
+    //post or create
+    myRouter.HandleFunc("/article-echo", createNewArticleDataAndEcho).Methods("POST")
+    myRouter.HandleFunc("/article-append", createNewArticleDataAndApped).Methods("POST")
+
     // finally, instead of passing in nil, we want
     // to pass in our newly created router as the second
     // argument
     log.Fatal(http.ListenAndServe(":10000", myRouter))
+}
+
+func createNewArticleDataAndEcho(w http.ResponseWriter, r *http.Request) {
+    // get the body of our POST request
+    // return the string response containing the request body
+    reqBody, _ := ioutil.ReadAll(r.Body)
+    fmt.Fprint(w, "%+v", string(reqBody))
+}
+
+func createNewArticleDataAndApped(w http.ResponseWriter, r *http.Request) {
+    // get the body of our POST request
+    // return the string response containing the request body
+    reqBody, _ := ioutil.ReadAll(r.Body)
+    var articleData ArticleData
+    json.Unmarshal(reqBody, &articleData)
+    //update global ArticleDatas and append the new article
+    ArticleDatas = append(ArticleDatas, articleData)
+
+    json.NewEncoder(w).Encode(ArticleDatas)
+}
+
+func deleteArticle(w http.ResponseWriter, r *http.Request){
+    // once again, we will need to parse the path parameters
+    vars := mux.Vars(r)
+    fmt.Println("this is vars %v", vars)
+    // we will need to extract the `id` of the article we
+    // wish to delete
+    id := vars["id"]
+
+    fmt.Println("this is id %v", id)
+    // we then need to loop through all our articles
+    for index, article := range ArticleDatas {
+        // if our id path parameter matches one of our
+        // articles
+        if article.Id == id {
+            // updates our Articles array to remove the
+            // article
+            ArticleDatas = append(ArticleDatas[:index], ArticleDatas[index+1:]...)
+
+            fmt.Println("Deleted")
+        }
+    }
 }
 
 func initArticles(){
